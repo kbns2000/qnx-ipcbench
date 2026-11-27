@@ -2,14 +2,20 @@
 
 **Project name:** ipcbench
 
-**Tagline:** See what QNX 8.0 message passing and timers really cost on your
-target, and whether your emulator is lying to you.
+**Tagline:** Know what QNX 8.0 MsgSend, pulses and timers cost on your target: 11.7 µs per message idle, 4.2 ms with the CPU busy at the same priority, and a coarse emulator clock flagged.
 
 **Category:** Developer tools
 
 **Video:** https://youtu.be/8_0jW087P5Y
 
 **Repository:** https://github.com/kbns2000/qnx-ipcbench
+
+## Measured on QNX 8.0 (QEMU x86_64; raw logs in the repository)
+
+- `MsgSend` 4 bytes, p50: **11.7 µs** to a thread, **48.4 µs** to another process. Pulse delivery **8.9 µs**.
+- Both CPUs busy at a **lower** priority: **19.4 µs** (p99 42.0 µs, inside the idle range).
+- Both CPUs busy at the **same** priority: **4,186 µs**, the 4 ms round-robin timeslice, shown directly.
+- A coarse emulator clock: a 2 ms timer off by **13.1 ms**, flagged automatically as COARSE CLOCK.
 
 ## Inspiration
 
