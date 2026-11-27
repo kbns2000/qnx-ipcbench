@@ -86,6 +86,13 @@ IPCB test=msg size=64 load=low n=20000 min_us=.. p50_us=.. p99_us=.. p999_us=.. 
 
 ## Quick start (Windows host, no hardware)
 
+| | |
+|---|---|
+| QNX version | QNX SDP 8.0 (QNX 8.0.0 target) |
+| Target | QEMU x86_64 virtual machine made with `mkqnximage`, 2 vCPUs, software emulation (TCG). Any QNX 8.0 board runs the same binary |
+| Toolchain | `qcc` from SDP 8.0 (GCC 12.2.0 backend): `-Vgcc_ntox86_64`, or `-Vgcc_ntoaarch64le` for ARM |
+| Host used for the measured runs | Windows 11, QEMU for Windows, Python 3 |
+
 You need QNX SDP 8.0 (free non-commercial licence, default install
 `%USERPROFILE%\qnx800`), QEMU for Windows (`C:\Program Files\qemu`) and Python 3.
 
