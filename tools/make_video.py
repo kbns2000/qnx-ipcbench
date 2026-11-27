@@ -117,8 +117,8 @@ def main():
 
     def say(im, d, text, base):
         caption(d, text)
-        # Windows' Zira voice: about 2.2 words per second; keep a margin
-        sec = max(base, math.ceil(len(text.split()) / 2.0 + 1.2))
+        # Windows' Zira voice: about 1.8 words per second with numbers; keep a margin
+        sec = max(base, math.ceil(len(text.split()) / 1.75 + 1.5))
         scenes.append((im, sec, text))
 
     a, b, c = by2[("msg", 4, "none")]["p50_us"], by2[("msg", 4, "low")]["p50_us"], by2[("msg", 4, "same")]["p50_us"]
