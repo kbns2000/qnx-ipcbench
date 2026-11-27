@@ -7,7 +7,7 @@ target, and whether your emulator is lying to you.
 
 **Category:** Developer tools
 
-**Video:** https://youtu.be/zB5pHZniULo
+**Video:** https://youtu.be/8_0jW087P5Y
 
 **Repository:** https://github.com/kbns2000/qnx-ipcbench
 

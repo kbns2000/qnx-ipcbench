@@ -29,7 +29,7 @@ The repository also has a one-command flow for **Windows hosts with no target
 board**: cross-compile with SDP 8.0, build a QNX 8.0 image with `mkqnximage`,
 boot it in QEMU, run the benchmark, and produce the report.
 
-**Demo video:** https://youtu.be/zB5pHZniULo (file: [`docs/media/ipcbench_demo.mp4`](docs/media/ipcbench_demo.mp4)) (85 s, rendered from the raw logs by `tools/make_video.py`).
+**Demo video (2:13, narrated):** https://youtu.be/8_0jW087P5Y — measured results first, rendered from the raw QNX logs by `tools/make_video.py` (captions-only version: https://youtu.be/zB5pHZniULo)
 
 ## Results (QNX 8.0 x86_64 in QEMU TCG, 2 vCPUs, Windows 11 host, 2026-11-08)
 
