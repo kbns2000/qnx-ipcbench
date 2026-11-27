@@ -1,0 +1,36 @@
+1
+00:00:00,000 --> 00:00:16,000
+On QNX 8.0, a message round trip took 11.7 microseconds. With both CPUs busy at a lower priority, 19.4. At the same priority, 4.2 milliseconds: a round robin timeslice.
+
+2
+00:00:16,000 --> 00:00:31,000
+How long does a message take? Is another process slower than a thread? What happens when the CPUs are busy? ipcbench measures it on your target.
+
+3
+00:00:31,000 --> 00:00:46,000
+One command on a Windows PC builds it, boots QNX 8.0 in QEMU, runs the benchmark and writes the report. On a board, just copy the binary.
+
+4
+00:00:46,000 --> 00:00:57,000
+The raw QNX console: 2 virtual CPUs, a 1 millisecond clock, 20000 samples per test, one result line each.
+
+5
+00:00:57,000 --> 00:01:09,000
+Median latency: 11.7 microseconds idle, 19.4 with lower priority load, and 4.2 milliseconds at the same priority. Note the log scale.
+
+6
+00:01:09,000 --> 00:01:20,000
+Load below your priority barely registers. Load at your priority costs a full timeslice. Lesson: set your priorities.
+
+7
+00:01:20,000 --> 00:01:35,000
+In an earlier run on the same PC, a two millisecond timer was off by 13.1 milliseconds. The guest clock was coarse, likely the Windows timer resolution.
+
+8
+00:01:35,000 --> 00:01:46,000
+So every report checks timer health, and flags a coarse clock before emulator numbers are published as RTOS numbers.
+
+9
+00:01:46,000 --> 00:01:56,000
+ipcbench is open source, Apache 2.0. Under emulation compare shapes, or run it on your board.
+

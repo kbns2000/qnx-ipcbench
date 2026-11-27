@@ -2,13 +2,16 @@
 """Render the ipcbench demo video from real QNX 8.0 (QEMU) console logs.
 
 Every number on screen is parsed from the logs given on the command line;
-nothing is typed in by hand. Captions only, no voice-over.
+nothing is typed in by hand. The caption of each scene is also its narration:
+the script writes OUT.json and OUT.srt next to the video, and tools/narrate.py
+adds the spoken track on a Windows PC.
 
 usage: python3 tools/make_video.py results/run2_2026-11-08/serial.log \
                                    results/run1_2026-11-08/serial.log out.mp4
 needs: Pillow, ffmpeg, DejaVu fonts
 SPDX-License-Identifier: Apache-2.0
 """
+import json
 import math
 import os
 import re
@@ -110,15 +113,28 @@ def main():
     _, _, rows1, _ = ipcreport.parse(run1)
     by2 = {(r["test"], r["size"], r["load"]): r for r in rows2}
     by1 = {(r["test"], r["size"], r["load"]): r for r in rows1}
-    scenes = []  # (image, seconds)
+    scenes = []  # (image, seconds, spoken text = caption)
 
+    def say(im, d, text, base):
+        caption(d, text)
+        # Windows' Zira voice: about 2.2 words per second; keep a margin
+        sec = max(base, math.ceil(len(text.split()) / 2.0 + 1.2))
+        scenes.append((im, sec, text))
+
+    a, b, c = by2[("msg", 4, "none")]["p50_us"], by2[("msg", 4, "low")]["p50_us"], by2[("msg", 4, "same")]["p50_us"]
+    ax = by2[("msgx", 4, "none")]["p50_us"]
     im, d = frame()
-    d.text((60, 220), "ipcbench", font=F_BIG, fill=ACC)
-    d.text((60, 300), "What QNX 8.0 message passing and timers really cost,", font=F_H1, fill=FG)
-    d.text((60, 346), "and what happens when the CPUs are busy", font=F_H1, fill=FG)
-    d.text((60, 430), "A developer tool for QNX 8.0  -  runs on the target, reports on the host", font=F_TXT, fill=DIM)
-    d.text((60, 470), "Every number in this video is parsed from real QNX 8.0 console logs (QEMU x86_64).", font=F_SMALL, fill=DIM)
-    scenes.append((im, 6))
+    d.text((60, 40), "ipcbench: what QNX 8.0 message passing really costs", font=F_H1, fill=FG)
+    d.text((60, 88), "medians parsed from the QNX 8.0 console log (QEMU x86_64, run 2)", font=F_SMALL, fill=DIM)
+    for i, (num, lab, col) in enumerate([
+            (f"{a:.1f} µs", "MsgSend 4 B, thread to thread, idle", (46, 160, 90)),
+            (f"{ax:.1f} µs", "MsgSend 4 B, to another process, idle", (46, 160, 90)),
+            (f"{b:.1f} µs", "thread, both CPUs busy at LOWER priority", ACC),
+            (f"{c / 1000:.1f} ms", "thread, both CPUs busy at the SAME priority", (230, 120, 90))]):
+        d.text((60, 140 + 98 * i), num, font=F_BIG, fill=col)
+        d.text((420, 158 + 98 * i), lab, font=F_TXT, fill=FG)
+    say(im, d, f"On QNX 8.0, a message round trip took {a:.1f} microseconds. With both CPUs busy at a lower "
+               f"priority, {b:.1f}. At the same priority, {c / 1000:.1f} milliseconds: a round robin timeslice.", 12)
 
     im, d = frame()
     header(d, "Questions every QNX developer asks when sizing a design")
@@ -129,8 +145,8 @@ def main():
           "      at a lower priority, and at the SAME priority?"]
     for i, q in enumerate(qs):
         d.text((80, 150 + 60 * i), ("•  " if not q.startswith(" ") else "") + q.strip(), font=F_TXT, fill=FG)
-    caption(d, "ipcbench measures each of these with ClockCycles() and prints one machine-readable line per result.")
-    scenes.append((im, 8))
+    say(im, d, "How long does a message take? Is another process slower than a thread? What happens when "
+               "the CPUs are busy? ipcbench measures it on your target.", 8)
 
     im, d = frame()
     header(d, "One command on a Windows PC - no target board needed")
@@ -143,9 +159,8 @@ def main():
     d.rectangle([60, 140, W - 60, 470], fill=PANEL)
     for i, s in enumerate(steps):
         d.text((90, 165 + 48 * i), s, font=F_MONO if i else F_H2, fill=FG if i else ACC)
-    caption(d, "On a real board you just copy the binary over and run it. Run 2 took "
-               f"{sum(ph2.values()):.0f} s of benchmarking inside the VM.")
-    scenes.append((im, 8))
+    say(im, d, "One command on a Windows PC builds it, boots QNX 8.0 in QEMU, runs the benchmark and "
+               "writes the report. On a board, just copy the binary.", 8)
 
     lines = console_lines(run2)
     try:
@@ -158,19 +173,17 @@ def main():
     d.rectangle([40, 110, W - 40, H - 110], fill=PANEL)
     for i, l in enumerate(shown):
         d.text((56, 122 + 21 * i), l[:118], font=F_MONO, fill=FG if l.startswith("IPCB") else DIM)
-    caption(d, f"{info2.get('cpus')} vCPUs, clock period {int(info2.get('clock_period_ns', 0))//1000} µs, "
-               f"{info2.get('samples')} samples per test. One IPCB line per test, size and load phase.")
-    scenes.append((im, 9))
+    say(im, d, f"The raw QNX console: {info2.get('cpus')} virtual CPUs, a "
+               f"{int(info2.get('clock_period_ns', 0)) // 1000000} millisecond clock, {info2.get('samples')} "
+               "samples per test, one result line each.", 9)
 
     lo, hi = 1, 100000
     im, d = frame()
     header(d, "Median latency, three load phases (log scale)", "run 2, QNX 8.0 in QEMU TCG")
     bars(d, [("msg 4 B", "msg", 4), ("msgx 4 B", "msgx", 4), ("msg 64 KiB", "msg", 65536), ("pulse", "pulse", 0)],
          by2, 160, 170, W - 240, 380, lo, hi)
-    a, b, c = by2[("msg", 4, "none")]["p50_us"], by2[("msg", 4, "low")]["p50_us"], by2[("msg", 4, "same")]["p50_us"]
-    caption(d, f"MsgSend 4 B: idle {a:.0f} µs, CPUs busy at lower priority {b:.0f} µs, "
-               f"busy at the same priority {c/1000:.1f} ms.")
-    scenes.append((im, 12))
+    say(im, d, f"Median latency: {a:.1f} microseconds idle, {b:.1f} with lower priority load, and "
+               f"{c / 1000:.1f} milliseconds at the same priority. Note the log scale.", 12)
 
     im, d = frame()
     header(d, "Finding 1: priority isolation is real - and measurable")
@@ -186,8 +199,8 @@ def main():
             d.text((90, y), l, font=F_TXT, fill=FG)
             y += 34
         y += 26
-    caption(d, "Lesson: set your priorities. The RTOS keeps its promise only when the design uses it.")
-    scenes.append((im, 11))
+    say(im, d, "Load below your priority barely registers. Load at your priority costs a full timeslice. "
+               "Lesson: set your priorities.", 11)
 
     t1 = by1.get(("timer", 2000, "none"))
     t2 = by2.get(("timer", 2000, "none"))
@@ -203,9 +216,9 @@ def main():
         d.text((x, 248), f"{t['p50_us']/1000:.2f} ms" if t else "n/a", font=F_BIG, fill=FG)
         d.text((x, 340), "MsgSend 4 B median", font=F_SMALL, fill=DIM)
         d.text((x, 368), f"{m['p50_us']:.1f} µs" if m else "n/a", font=F_H1, fill=FG)
-    caption(d, "Same binary logic, same PC: in run 1 the guest clock was coarse (~15 ms steps), which "
-               "matches the default Windows timer resolution [inference]. The report now flags such runs.")
-    scenes.append((im, 12))
+    say(im, d, f"In an earlier run on the same PC, a two millisecond timer was off by "
+               f"{t1['p50_us'] / 1000:.1f} milliseconds. The guest clock was coarse, likely the Windows "
+               "timer resolution.", 12)
 
     th, warn = ipcreport.timer_health(rows2, tim2)
     im, d = frame()
@@ -218,9 +231,8 @@ def main():
             cells = ["period", "load", "achieved / requested", "overruns", "median error", "verdict"]
         row = "".join(c.ljust(w) for c, w in zip(cells, widths))
         d.text((56, 128 + 36 * i), row[:120], font=F_MONO, fill=FG if i else ACC)
-    caption(d, "Achieved rate, overruns and median error per timer. Run 1 is flagged COARSE CLOCK, so "
-               "emulator artefacts are never published as RTOS numbers.")
-    scenes.append((im, 11))
+    say(im, d, "So every report checks timer health, and flags a coarse clock before emulator numbers "
+               "are published as RTOS numbers.", 11)
 
     im, d = frame()
     d.text((60, 200), "ipcbench", font=F_BIG, fill=ACC)
@@ -230,19 +242,33 @@ def main():
                            "Under QEMU TCG absolute numbers are emulator numbers: compare shapes,",
                            "or run it on your board for the real thing."]):
         d.text((60, 360 + 38 * i), s, font=F_TXT, fill=DIM if i >= 2 else FG)
-    scenes.append((im, 8))
+    say(im, d, "ipcbench is open source, Apache 2.0. Under emulation compare shapes, or run it on your board.", 8)
+
+    base = os.path.splitext(out)[0]
+    narr, t = [], 0.0
+    for _, sec, text in scenes:
+        narr.append({"start": t, "end": t + sec, "text": text})
+        t += sec
+    with open(base + ".json", "w", encoding="utf-8") as f:
+        json.dump(narr, f, indent=1)
+
+    def ts(x):
+        return "%02d:%02d:%02d,000" % (x // 3600, x % 3600 // 60, x % 60)
+    with open(base + ".srt", "w", encoding="utf-8") as f:
+        for i, n in enumerate(narr, 1):
+            f.write(f"{i}\n{ts(n['start'])} --> {ts(n['end'])}\n{n['text']}\n\n")
 
     with tempfile.TemporaryDirectory() as td:
         lst = os.path.join(td, "list.txt")
         with open(lst, "w") as f:
-            for i, (img, sec) in enumerate(scenes):
+            for i, (img, sec, _) in enumerate(scenes):
                 p = os.path.join(td, f"s{i:02d}.png")
                 img.save(p)
                 f.write(f"file '{p}'\nduration {sec}\n")
             f.write(f"file '{p}'\n")
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lst,
                         "-vf", "fps=30,format=yuv420p", "-c:v", "libx264", "-crf", "20", out], check=True)
-    print(out, sum(s for _, s in scenes), "s")
+    print(out, sum(s for _, s, _ in scenes), "s")
 
 
 if __name__ == "__main__":

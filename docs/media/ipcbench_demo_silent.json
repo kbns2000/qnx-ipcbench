@@ -1,0 +1,47 @@
+[
+ {
+  "start": 0.0,
+  "end": 16.0,
+  "text": "On QNX 8.0, a message round trip took 11.7 microseconds. With both CPUs busy at a lower priority, 19.4. At the same priority, 4.2 milliseconds: a round robin timeslice."
+ },
+ {
+  "start": 16.0,
+  "end": 31.0,
+  "text": "How long does a message take? Is another process slower than a thread? What happens when the CPUs are busy? ipcbench measures it on your target."
+ },
+ {
+  "start": 31.0,
+  "end": 46.0,
+  "text": "One command on a Windows PC builds it, boots QNX 8.0 in QEMU, runs the benchmark and writes the report. On a board, just copy the binary."
+ },
+ {
+  "start": 46.0,
+  "end": 57.0,
+  "text": "The raw QNX console: 2 virtual CPUs, a 1 millisecond clock, 20000 samples per test, one result line each."
+ },
+ {
+  "start": 57.0,
+  "end": 69.0,
+  "text": "Median latency: 11.7 microseconds idle, 19.4 with lower priority load, and 4.2 milliseconds at the same priority. Note the log scale."
+ },
+ {
+  "start": 69.0,
+  "end": 80.0,
+  "text": "Load below your priority barely registers. Load at your priority costs a full timeslice. Lesson: set your priorities."
+ },
+ {
+  "start": 80.0,
+  "end": 95.0,
+  "text": "In an earlier run on the same PC, a two millisecond timer was off by 13.1 milliseconds. The guest clock was coarse, likely the Windows timer resolution."
+ },
+ {
+  "start": 95.0,
+  "end": 106.0,
+  "text": "So every report checks timer health, and flags a coarse clock before emulator numbers are published as RTOS numbers."
+ },
+ {
+  "start": 106.0,
+  "end": 116.0,
+  "text": "ipcbench is open source, Apache 2.0. Under emulation compare shapes, or run it on your board."
+ }
+]
