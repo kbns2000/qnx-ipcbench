@@ -1,5 +1,16 @@
 # ipcbench: see what QNX 8.0 message passing and timers really cost, on your own target
 
+**Know what a QNX 8.0 `MsgSend()`, pulse and timer cost on your target before you size a design.**
+Measured on QNX 8.0 x86_64 in QEMU (run 2, raw logs in [`results/`](results/)):
+
+| | p50 |
+|---|---|
+| `MsgSend` 4 B, thread / other process | **11.7 µs / 48.4 µs** |
+| Pulse delivery | **8.9 µs** |
+| Same test with both CPUs busy at **lower** priority | **19.4 µs** (p99 42.0 µs, inside the idle range) |
+| Same test with both CPUs busy at the **same** priority | **4,186 µs**: the 4 ms round-robin timeslice, shown directly |
+| A coarse emulator clock (run 1) | 2 ms timer off by **13.1 ms**: flagged automatically as COARSE CLOCK |
+
 `ipcbench` is a small developer tool for QNX 8.0. It answers questions every QNX
 developer asks when sizing a design:
 
